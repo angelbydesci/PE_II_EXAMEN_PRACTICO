@@ -14,7 +14,7 @@ Se ha desarrollado una vista dedicada (`pest.blade.php`) para que los usuarios p
 
 **Imagen de la Vista PEST:**
 *(Aquí puedes añadir una captura de pantalla general de la vista PEST)*
-`![Vista General del Análisis PEST](image/imagen1.png)`
+![Vista General del Análisis PEST](image/imagen1.png)`
 
 ### 2. Funcionalidad de los Radio Buttons y Cálculo de Puntajes
 
@@ -33,7 +33,7 @@ La interacción principal del usuario en la tabla de autodiagnóstico se realiza
 
 **Imagen de los Radio Buttons y Campos de Puntaje:**
 *(Aquí puedes añadir una captura de pantalla mostrando la tabla de radio buttons y los campos de puntaje con valores)*
-`![Radio Buttons y Puntajes](image/imagen2.png)`
+![Radio Buttons y Puntajes](image/imagen2.png)`
 
 ### 3. Mensajes de Reflexión y Gráfico de Barras
 
@@ -49,7 +49,7 @@ La interacción principal del usuario en la tabla de autodiagnóstico se realiza
 
 **Imagen del Gráfico de Barras:**
 *(Aquí puedes añadir una captura de pantalla del gráfico de barras mostrando los resultados)*
-`![Gráfico de Impacto PEST](image/imagen3.png)`
+![Gráfico de Impacto PEST](image/imagen3.png)`
 
 ## Estructura de la Base de Datos (Tabla `pest`)
 
