@@ -39,11 +39,13 @@ class Pest extends Model
         'pregunta24',
         'pregunta25',
         'sumatorio',
-        'RFAmbientales', // Asegúrate que coincida con el nombre en el formulario si es diferente a la columna
-        'RFPoliticos',   // Asegúrate que coincida con el nombre en el formulario
-        'RFEconomicos',  // Asegúrate que coincida con el nombre en el formulario
-        'RFTecnologicos', // Asegúrate que coincida con el nombre en el formulario
-        'RFSocialesDemograficos' // Campo del formulario para reflexión, no directamente en la tabla pest como columna separada, revisar si se guarda en otro lado o se omite. Por ahora lo incluyo si se decide añadir una columna.
+        'RFSociales',    // Puntaje para Factores Sociales y Demográficos
+        'RFAmbientales', // Puntaje para Factores Medio Ambientales
+        'RFPoliticos',   // Puntaje para Factores Políticos
+        'RFEconomicos',  // Puntaje para Factores Económicos
+        'RFTecnologicos', // Puntaje para Factores Tecnológicos
+        'reflexion_social_texto', 'reflexion_ambiental_texto', 'reflexion_politico_texto',
+        'reflexion_economico_texto', 'reflexion_tecnologico_texto',
     ];
 
     /**

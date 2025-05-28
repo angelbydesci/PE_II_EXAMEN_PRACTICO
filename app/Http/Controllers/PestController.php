@@ -18,38 +18,12 @@ class PestController extends Controller
      */
     public function store(Request $request, Proyecto $proyecto)
     {
-        $validator = Validator::make($request->all(), [
-            'pregunta1' => 'required|integer|min:0|max:4',
-            'pregunta2' => 'required|integer|min:0|max:4',
-            'pregunta3' => 'required|integer|min:0|max:4',
-            'pregunta4' => 'required|integer|min:0|max:4',
-            'pregunta5' => 'required|integer|min:0|max:4',
-            'pregunta6' => 'required|integer|min:0|max:4',
-            'pregunta7' => 'required|integer|min:0|max:4',
-            'pregunta8' => 'required|integer|min:0|max:4',
-            'pregunta9' => 'required|integer|min:0|max:4',
-            'pregunta10' => 'required|integer|min:0|max:4',
-            'pregunta11' => 'required|integer|min:0|max:4',
-            'pregunta12' => 'required|integer|min:0|max:4',
-            'pregunta13' => 'required|integer|min:0|max:4',
-            'pregunta14' => 'required|integer|min:0|max:4',
-            'pregunta15' => 'required|integer|min:0|max:4',
-            'pregunta16' => 'required|integer|min:0|max:4',
-            'pregunta17' => 'required|integer|min:0|max:4',
-            'pregunta18' => 'required|integer|min:0|max:4',
-            'pregunta19' => 'required|integer|min:0|max:4',
-            'pregunta20' => 'required|integer|min:0|max:4',
-            'pregunta21' => 'required|integer|min:0|max:4',
-            'pregunta22' => 'required|integer|min:0|max:4',
-            'pregunta23' => 'required|integer|min:0|max:4',
-            'pregunta24' => 'required|integer|min:0|max:4',
-            'pregunta25' => 'required|integer|min:0|max:4',
-            'RFSocialesDemograficos' => 'nullable|string',
-            'RFAmbientales' => 'nullable|string', // Asumiendo que estos son los textareas de reflexión
-            'RFPoliticos' => 'nullable|string',
-            'RFEconomicos' => 'nullable|string',
-            'RFTecnologicos' => 'nullable|string',
-        ]);
+        $rules = [];
+        for ($i = 1; $i <= 25; $i++) {
+            $rules['pregunta'.$i] = 'required|integer|min:0|max:4';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return redirect()->route('proyectos.showPest', $proyecto->id)
@@ -57,33 +31,48 @@ class PestController extends Controller
                         ->withInput();
         }
 
-        $data = $request->only([
-            'pregunta1', 'pregunta2', 'pregunta3', 'pregunta4', 'pregunta5',
-            'pregunta6', 'pregunta7', 'pregunta8', 'pregunta9', 'pregunta10',
-            'pregunta11', 'pregunta12', 'pregunta13', 'pregunta14', 'pregunta15',
-            'pregunta16', 'pregunta17', 'pregunta18', 'pregunta19', 'pregunta20',
-            'pregunta21', 'pregunta22', 'pregunta23', 'pregunta24', 'pregunta25',
-            // Los campos de reflexión se manejarán según la definición de la tabla
-            // Si no son columnas directas en 'pest', se deben guardar en otro lugar o ajustar el modelo/tabla
-            'RFAmbientales', 'RFPoliticos', 'RFEconomicos', 'RFTecnologicos'
-        ]);
+        $dataToSave = $request->only(array_keys($rules));
+        $dataToSave['proyecto_id'] = $proyecto->id;
 
-        // Calcular sumatorio
-        $sumatorio = 0;
+        // Calcular sumatorio total de las preguntas PEST
+        $sumatorioTotal = 0;
         for ($i = 1; $i <= 25; $i++) {
-            $sumatorio += (int)$request->input('pregunta'.$i);
+            $sumatorioTotal += (int)$request->input('pregunta'.$i);
         }
-        $data['sumatorio'] = $sumatorio;
+        $dataToSave['sumatorio'] = $sumatorioTotal;
 
-        // Añadir RFMedioA si existe en el formulario y tabla
-        if ($request->has('RFMedioA')) {
-            $data['RFMedioA'] = $request->input('RFMedioA');
-        }
+        // Calcular puntajes específicos por factor
+        $puntajesNumericos = [
+            'RFSociales' => 0,
+            'RFPoliticos' => 0,
+            'RFEconomicos' => 0,
+            'RFTecnologicos' => 0,
+            'RFAmbientales' => 0,
+        ];
 
+        for ($i = 1; $i <= 5; $i++) { $puntajesNumericos['RFSociales'] += (int)$request->input('pregunta'.$i); }
+        for ($i = 6; $i <= 10; $i++) { $puntajesNumericos['RFPoliticos'] += (int)$request->input('pregunta'.$i); }
+        for ($i = 11; $i <= 15; $i++) { $puntajesNumericos['RFEconomicos'] += (int)$request->input('pregunta'.$i); }
+        for ($i = 16; $i <= 20; $i++) { $puntajesNumericos['RFTecnologicos'] += (int)$request->input('pregunta'.$i); }
+        for ($i = 21; $i <= 25; $i++) { $puntajesNumericos['RFAmbientales'] += (int)$request->input('pregunta'.$i); }
+
+        $dataToSave['RFSociales'] = $puntajesNumericos['RFSociales'] * 5;
+        $dataToSave['RFPoliticos'] = $puntajesNumericos['RFPoliticos'] * 5;
+        $dataToSave['RFEconomicos'] = $puntajesNumericos['RFEconomicos'] * 5;
+        $dataToSave['RFTecnologicos'] = $puntajesNumericos['RFTecnologicos'] * 5;
+        $dataToSave['RFAmbientales'] = $puntajesNumericos['RFAmbientales'] * 5;
+
+        // Generar y guardar textos de reflexión
+        $umbral = 70;
+        $dataToSave['reflexion_social_texto'] = ($dataToSave['RFSociales'] >= $umbral) ? "HAY UN NOTABLE IMPACTO DE FACTORES SOCIALES Y DEMOGRÁFICOS EN EL FUNCIONAMIENTO DE LA EMPRESA" : "NO HAY UN NOTABLE IMPACTO DE FACTORES SOCIALES Y DEMOGRÁFICOS EN EL FUNCIONAMIENTO DE LA EMPRESA";
+        $dataToSave['reflexion_ambiental_texto'] = ($dataToSave['RFAmbientales'] >= $umbral) ? "HAY UN NOTABLE IMPACTO DE FACTORES MEDIO AMBIENTALES EN EL FUNCIONAMIENTO DE LA EMPRESA" : "NO HAY UN NOTABLE IMPACTO DE FACTORES MEDIO AMBIENTALES EN EL FUNCIONAMIENTO DE LA EMPRESA";
+        $dataToSave['reflexion_politico_texto'] = ($dataToSave['RFPoliticos'] >= $umbral) ? "HAY UN NOTABLE IMPACTO DE FACTORES POLÍTICOS EN EL FUNCIONAMIENTO DE LA EMPRESA" : "NO HAY UN NOTABLE IMPACTO DE FACTORES POLÍTICOS EN EL FUNCIONAMIENTO DE LA EMPRESA";
+        $dataToSave['reflexion_economico_texto'] = ($dataToSave['RFEconomicos'] >= $umbral) ? "HAY UN NOTABLE IMPACTO DE FACTORES ECONÓMICOS EN EL FUNCIONAMIENTO DE LA EMPRESA" : "NO HAY UN NOTABLE IMPACTO DE FACTORES ECONÓMICOS EN EL FUNCIONAMIENTO DE LA EMPRESA";
+        $dataToSave['reflexion_tecnologico_texto'] = ($dataToSave['RFTecnologicos'] >= $umbral) ? "HAY UN NOTABLE IMPACTO DE FACTORES TECNOLÓGICOS EN EL FUNCIONAMIENTO DE LA EMPRESA" : "NO HAY UN NOTABLE IMPACTO DE FACTORES TECNOLÓGICOS EN EL FUNCIONAMIENTO DE LA EMPRESA";
 
         Pest::updateOrCreate(
             ['proyecto_id' => $proyecto->id],
-            $data
+            $dataToSave
         );
 
         return redirect()->route('proyectos.showPest', $proyecto->id)->with('success', 'Análisis PEST guardado con éxito.');

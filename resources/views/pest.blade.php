@@ -1,5 +1,6 @@
-<!-- resources/views/x-x.blade.php -->
+@extends('layouts.app')
 
+@section('content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-12">
@@ -31,16 +32,9 @@
 
                     <p>A continuación marque con una X para valorar su empresa en función de cada una de las afirmaciones, de tal forma que 0= En total en desacuerdo; 1= No está de acuerdo; 2= Está de acuerdo; 3= Está bastante de acuerdo; 4= En total acuerdo. En caso de no cumplimentar una casilla o duplicar su respuesta le aparecerá el mensaje de error ("¡REF!)</p>
 
-                    {{-- Inicio de la tabla de Autodiagnóstico P.E.S.T. --}}
-                    {{-- Asegúrate de que la variable $proyecto esté disponible en esta vista --}}
-                    {{-- Si $proyecto_id es lo que se pasa, usa $proyecto_id en lugar de $proyecto->id --}}
                     <form method="POST" action="{{ route('pest.store', ['proyecto' => $proyecto->id]) }}">
                         @csrf
-                        {{-- El input oculto proyecto_id ya no es estrictamente necesario si se pasa en la URL, --}}
-                        {{-- pero el controlador PestController@store lo espera como $proyecto de la URL. --}}
-                        {{-- Si el controlador PestController@store también espera 'proyecto_id' del request body, mantenlo. --}}
-                        {{-- Por coherencia con la ruta, el parámetro {proyecto} se toma de la URL. --}}
-
+                        
                         <div class="table-responsive mt-4">
                             <table class="table table-bordered">
                                 <thead>
@@ -58,7 +52,7 @@
                                 </thead>
                                 <tbody>
                                     @php
-                                        $preguntas = [
+                                        $preguntasText = [
                                             "1. Los cambios en la composicón étnica de los consumidores de nuestro mercado está teniendo un notable impacto.",
                                             "2. El envejecimiento de la población tiene un importante impacto en la demanda.",
                                             "3. Los nuevos estilos de vida y tendencias originan cambios en la oferta de nuestro sector.",
@@ -85,14 +79,33 @@
                                             "24. La creciente preocupación social por el medio ambiente impacta notablemente en la demanda de productos/servicios ofertados en nuestro mercado.",
                                             "25. El factor ecológico es una fuente de diferenciación clara en el sector donde opera nuestra empresa."
                                         ];
+                                        $existingAnswers = [];
+                                        if (isset($pestData) && $pestData) {
+                                            for ($k = 1; $k <= 25; $k++) {
+                                                $preguntaKey = 'pregunta'.$k;
+                                                if (isset($pestData->$preguntaKey)) {
+                                                    $existingAnswers[$preguntaKey] = $pestData->$preguntaKey;
+                                                }
+                                            }
+                                        }
                                     @endphp
 
-                                    @foreach ($preguntas as $index => $pregunta)
+                                    @foreach ($preguntasText as $index => $pregunta)
                                     <tr>
                                         <td>{{ $pregunta }}</td>
                                         @for ($i = 0; $i <= 4; $i++)
                                         <td class="text-center">
-                                            <input type="radio" name="pregunta{{ $index + 1 }}" value="{{ $i }}" required>
+                                            @php
+                                                $fieldName = 'pregunta'.($index + 1);
+                                                $radioValue = $i;
+                                                $isChecked = false;
+                                                if (old($fieldName) !== null) {
+                                                    if (old($fieldName) == $radioValue) { $isChecked = true; }
+                                                } elseif (isset($existingAnswers[$fieldName])) {
+                                                    if ($existingAnswers[$fieldName] == $radioValue) { $isChecked = true; }
+                                                }
+                                            @endphp
+                                            <input type="radio" name="{{ $fieldName }}" value="{{ $radioValue }}" @if($isChecked) checked @endif required>
                                         </td>
                                         @endfor
                                     </tr>
@@ -103,41 +116,174 @@
 
                         <hr>
                         <h2 class="mt-4">Reflexión sobre los Factores</h2>
-
+                        
                         <div class="form-group mt-3">
-                            <label for="reflexion_social_demografico">FACTORES SOCIALES Y DEMOGRÁFICOS</label>
-                            <textarea class="form-control" id="reflexion_social_demografico" name="RFSocialesDemograficos" rows="3"></textarea>
+                            <label for="reflexion_social_demografico">FACTORES SOCIALES Y DEMOGRÁFICOS (Reflexión)</label>
+                            <textarea class="form-control" id="reflexion_social_demografico" name="reflexion_RFSocialesDemograficos_display" rows="3" readonly>{{ $pestData->reflexion_social_texto ?? '' }}</textarea>
+                            <label for="puntaje_RFSociales" class="mt-2">Puntaje:</label>
+                            <input type="number" class="form-control" id="puntaje_RFSociales" name="RFSociales_display" value="{{ $pestData->RFSociales ?? 0 }}" readonly>
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="reflexion_medio_ambiental">FACTORES MEDIO AMBIENTALES</label>
-                            <textarea class="form-control" id="reflexion_medio_ambiental" name="RFAmbientales" rows="3"></textarea>
+                            <label for="reflexion_medio_ambiental">FACTORES MEDIO AMBIENTALES (Reflexión)</label>
+                            <textarea class="form-control" id="reflexion_medio_ambiental" name="reflexion_RFAmbientales_display" rows="3" readonly>{{ $pestData->reflexion_ambiental_texto ?? '' }}</textarea>
+                            <label for="puntaje_RFAmbientales" class="mt-2">Puntaje:</label>
+                            <input type="number" class="form-control" id="puntaje_RFAmbientales" name="RFAmbientales_display" value="{{ $pestData->RFAmbientales ?? 0 }}" readonly>
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="reflexion_politicos">FACTORES POLÍTICOS</label>
-                            <textarea class="form-control" id="reflexion_politicos" name="RFPoliticos" rows="3"></textarea>
+                            <label for="reflexion_politicos">FACTORES POLÍTICOS (Reflexión)</label>
+                            <textarea class="form-control" id="reflexion_politicos" name="reflexion_RFPoliticos_display" rows="3" readonly>{{ $pestData->reflexion_politico_texto ?? '' }}</textarea>
+                            <label for="puntaje_RFPoliticos" class="mt-2">Puntaje:</label>
+                            <input type="number" class="form-control" id="puntaje_RFPoliticos" name="RFPoliticos_display" value="{{ $pestData->RFPoliticos ?? 0 }}" readonly>
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="reflexion_economicos">FACTORES ECONÓMICOS</label>
-                            <textarea class="form-control" id="reflexion_economicos" name="RFEconomicos" rows="3"></textarea>
+                            <label for="reflexion_economicos">FACTORES ECONÓMICOS (Reflexión)</label>
+                            <textarea class="form-control" id="reflexion_economicos" name="reflexion_RFEconomicos_display" rows="3" readonly>{{ $pestData->reflexion_economico_texto ?? '' }}</textarea>
+                            <label for="puntaje_RFEconomicos" class="mt-2">Puntaje:</label>
+                            <input type="number" class="form-control" id="puntaje_RFEconomicos" name="RFEconomicos_display" value="{{ $pestData->RFEconomicos ?? 0 }}" readonly>
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="reflexion_tecnologicos">FACTORES TECNOLÓGICOS</label>
-                            <textarea class="form-control" id="reflexion_tecnologicos" name="RFTecnologicos" rows="3"></textarea>
+                            <label for="reflexion_tecnologicos">FACTORES TECNOLÓGICOS (Reflexión)</label>
+                            <textarea class="form-control" id="reflexion_tecnologicos" name="reflexion_RFTecnologicos_display" rows="3" readonly>{{ $pestData->reflexion_tecnologico_texto ?? '' }}</textarea>
+                            <label for="puntaje_RFTecnologicos" class="mt-2">Puntaje:</label>
+                            <input type="number" class="form-control" id="puntaje_RFTecnologicos" name="RFTecnologicos_display" value="{{ $pestData->RFTecnologicos ?? 0 }}" readonly>
                         </div>
 
                         <div class="form-group mt-4">
                             <button type="submit" class="btn btn-primary">Guardar Análisis PEST</button>
                         </div>
                     </form>
-                    {{-- Fin de la tabla de Autodiagnóstico P.E.S.T. --}}
+
+                    <hr class="mt-5 mb-4">
+                    <h2 class="mt-4">Gráfico de Impacto de Factores Generales Externos</h2>
+                    <div style="width: 80%; margin: auto;">
+                        <canvas id="pestChart"></canvas>
+                    </div>
 
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('pestChart');
+    if (!ctx) {
+        console.error("Elemento canvas 'pestChart' no encontrado.");
+        return;
+    }
+
+    const chartCtx = ctx.getContext('2d');
+    const pestDataObject = @json($pestData ?? null);
+    console.log("Datos PEST de la BD (pestDataObject):", pestDataObject);
+
+    const radioQuestionNames = [];
+    for (let i = 1; i <= 25; i++) {
+        radioQuestionNames.push(`pregunta${i}`);
+    }
+
+    let pestChartInstance;
+
+    function getSelectedRadioValue(groupName) {
+        const selectedRadio = document.querySelector(`input[name="${groupName}"]:checked`);
+        return selectedRadio ? parseInt(selectedRadio.value) : 0;
+    }
+
+    function calculateScoresForChart() {
+        let scores = {
+            sociales: 0, politicos: 0, economicos: 0, tecnologicos: 0, ambientales: 0
+        };
+        for (let i = 1; i <= 5; i++) { scores.sociales += getSelectedRadioValue(`pregunta${i}`); }
+        for (let i = 6; i <= 10; i++) { scores.politicos += getSelectedRadioValue(`pregunta${i}`); }
+        for (let i = 11; i <= 15; i++) { scores.economicos += getSelectedRadioValue(`pregunta${i}`); }
+        for (let i = 16; i <= 20; i++) { scores.tecnologicos += getSelectedRadioValue(`pregunta${i}`); }
+        for (let i = 21; i <= 25; i++) { scores.ambientales += getSelectedRadioValue(`pregunta${i}`); }
+
+        scores.sociales *= 5; scores.politicos *= 5; scores.economicos *= 5;
+        scores.tecnologicos *= 5; scores.ambientales *= 5;
+        console.log("Puntajes calculados para el gráfico (desde radios):", scores);
+        return scores;
+    }
+    
+    function updateChart(scores) {
+        if (pestChartInstance) {
+            console.log("Actualizando gráfico con puntajes:", scores);
+            pestChartInstance.data.datasets[0].data = [
+                scores.sociales, scores.ambientales, scores.politicos,
+                scores.economicos, scores.tecnologicos
+            ];
+            pestChartInstance.update();
+        } else {
+            console.error("Instancia del gráfico (pestChartInstance) no definida al intentar actualizar.");
+        }
+    }
+
+    function initializeChart(initialScores) {
+        console.log("Inicializando gráfico con puntajes:", initialScores);
+        pestChartInstance = new Chart(chartCtx, {
+            type: 'bar',
+            data: {
+                labels: ['FACTORES SOCIALES Y DEMOGRÁFICOS', 'FACTORES MEDIO AMBIENTALES', 'FACTORES POLÍTICOS', 'FACTORES ECONÓMICOS', 'FACTORES TECNOLÓGICOS'],
+                datasets: [{
+                    label: 'Nivel de impacto',
+                    data: [ initialScores.sociales, initialScores.ambientales, initialScores.politicos, initialScores.economicos, initialScores.tecnologicos ],
+                    backgroundColor: [
+                        'rgba(144, 238, 144, 0.7)', 'rgba(0, 128, 0, 0.7)', 'rgba(139, 69, 19, 0.7)',
+                        'rgba(255, 165, 0, 0.7)', 'rgba(173, 216, 230, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(144, 238, 144, 1)', 'rgba(0, 128, 0, 1)', 'rgba(139, 69, 19, 1)',
+                        'rgba(255, 165, 0, 1)', 'rgba(173, 216, 230, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Nivel de impacto de factores generales externos' } },
+                    x: { title: { display: true, text: 'Tipología de factores generales externos' } }
+                },
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => context.dataset.label + ': ' + context.parsed.y } } }
+            }
+        });
+    }
+
+    let scoresForChartInitialization;
+    if (pestDataObject && typeof pestDataObject === 'object' && Object.keys(pestDataObject).length > 0) {
+        scoresForChartInitialization = {
+            sociales: parseInt(pestDataObject.RFSociales) || 0,
+            ambientales: parseInt(pestDataObject.RFAmbientales) || 0,
+            politicos: parseInt(pestDataObject.RFPoliticos) || 0,
+            economicos: parseInt(pestDataObject.RFEconomicos) || 0,
+            tecnologicos: parseInt(pestDataObject.RFTecnologicos) || 0
+        };
+        console.log("Puntajes para inicialización del gráfico (desde pestDataObject):", scoresForChartInitialization);
+    } else {
+        console.log("pestDataObject vacío o nulo. Calculando puntajes iniciales para el gráfico desde los radios.");
+        scoresForChartInitialization = calculateScoresForChart();
+    }
+    initializeChart(scoresForChartInitialization);
+
+    radioQuestionNames.forEach(name => {
+        const radios = document.querySelectorAll(`input[name="${name}"]`);
+        radios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const currentScoresForChart = calculateScoresForChart();
+                updateChart(currentScoresForChart);
+            });
+        });
+    });
+});
+</script>
+@endpush
+@endsection
+
+
 
